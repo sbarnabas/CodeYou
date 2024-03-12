@@ -6,6 +6,7 @@ internal class Program
     private static  void Main(string[] args)
     {
         WeatherUtilities.WeatherFetcher w= new WeatherUtilities.WeatherFetcher();
+        
         WeatherForecast forecast = w.getCurrentWeatherForZip("40018");
         Debug.WriteLine(forecast.ToString());
         if(forecast.isDaytime && forecast.temp > 60) {
@@ -18,7 +19,7 @@ internal class Program
         {
             Console.WriteLine(forecast.longForecast);
         }
-        if(WeatherHelpers.willItRain(w)){
+        if(WeatherHelpers.willItRain(forecast)){
             Console.WriteLine("It looks like it will rain.");
         }
         
