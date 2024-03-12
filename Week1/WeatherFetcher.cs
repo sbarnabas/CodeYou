@@ -1,3 +1,4 @@
+using System.Data.Common;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
@@ -26,10 +27,12 @@ namespace WeatherUtilities
 
         public WeatherFetcher()
         {
-            //static initializers run before constructors, so zip data will always be loaded here.
-            Debug.WriteLine($"Loaded zip geocoding data for {zipCodeLookup.Count()} zipcodes");
         }
 
+
+        public WeatherForecast getCurrentWeatherForZip(string zip){
+            return getForecastDataForZip(zip).First();
+        }
 
         public List<WeatherForecast> getForecastDataForZip(string zip)
         {
@@ -53,9 +56,10 @@ namespace WeatherUtilities
                 //weather.gov requires a user-agent
                 client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (compatible; codeYouDemo/1.0)");
                 var forecastUrl = cachedForecastProps[zip]?.forecast;
+                var city = cachedForecastProps[zip]?.relativeLocation?.properties?.city;
+                var state = cachedForecastProps[zip]?.relativeLocation?.properties?.state;
                 if (forecastUrl != null)
                 {
-                    Debug.WriteLine($"Fetching from {forecastUrl}");
 
                     var result = client.GetFromJsonAsync<RawForecastData>(forecastUrl);
                     result.Wait();
@@ -65,12 +69,14 @@ namespace WeatherUtilities
                         when = p.name ?? "Unknown",
                         shortForecast = p.shortForecast ?? "none",
                         longForecast = p.detailedForecast ?? "none",
-                        chanceOfPrecepitation = p.probabilityOfPrecipitation?.value.ToString() + "%",
-                        humidity = p.relativeHumidity?.value.ToString() + "%",
+                        chanceOfPrecepitation =
+                            String.IsNullOrWhiteSpace(p.probabilityOfPrecipitation?.value.ToString()) ? "0" :
+                            p.probabilityOfPrecipitation?.value.ToString()??"0",
+                        humidity = p.relativeHumidity?.value.ToString()??"0",
                         isDaytime = p.isDaytime,
                         temp = p.temperature,
-                        city = cachedForecastProps[zip]?.city ?? "unknown",
-                        state = cachedForecastProps[zip]?.state ?? "unknown",
+                        city = city ?? "unknown",
+                        state = state ?? "unknown",
                         zip = zip
 
                     }).ToList() ?? new List<WeatherForecast>();
@@ -92,7 +98,6 @@ namespace WeatherUtilities
                     //weather.gov requires a user-agent
                     client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (compatible; codeYouDemo/1.0)");
 
-                    Debug.WriteLine($"Fetching from {pointLookup.ToString()}");
                     var result = await client.GetFromJsonAsync<RawPointData>(pointLookup.ToString());
                     return result?.properties;
                 }
